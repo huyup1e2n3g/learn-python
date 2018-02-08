@@ -1,0 +1,92 @@
+一、Mixin是一种用实现的接口来实现代码复用的思想。不同编程语言中都有类似的使用形式，但本质都是一样的。继承强调的是
+    
+    class A(B,CMixin)
+    A类继承父类B并混入Mixin类CMixin。其中CMixin表示作为一种方法混入A，仅用于实现某一功能。名字中的Mixin便于让读代码人理解CMixin是一个Mixin类，仅作为一个功能。综上A是B的子类，A有CMixin的功能。
+    继承强调“是什么”，Mixin强调“能做什么”。        
+
+    Mixin思想在python中实现方式就是多重继承，但需要注意一些使用限制避免使类的关系复杂。
+    Mixin类使用需要注意的限制：
+        1）Mixin类功能需要单一，若要实现多个功能就需要创建多个Mixin类。
+        2）其次Mixin类不依赖子类的实现，不能继承除了Mixin以外的类。
+        3）不单独生成使用实例（理解为一个抽象类）。
+
+二、多重继承三大原则：
+1.子类永远在父类前面
+2.如果有多个父类，会根据它们在列表中的顺序被检查
+3.如果对下一个类存在两个合法的选择，选择第一个父类
+------------------------
+三、python 多重继承之拓扑排序
+https://kevinguo.me/2018/01/19/python-topological-sorting/#%E4%B8%80%E4%BB%80%E4%B9%88%E6%98%AF%E6%8B%93%E6%89%91%E6%8E%92%E5%BA%8F
+-------------------------------------
+四、ＭＲＯ算法：Ｃ３算法，用于方法解析顺序 。
+方法解析顺序 ：多重继承时，用于在子类中调用父类方法时确定调用哪个父类的方法 。
+继承顺序：
+
+例：
+\\\\\\\\\\\\\\\\\
+
+class D(object):
+    pass
+
+class E(object):
+    pass
+
+class F(object):
+    pass
+
+class C(D, F):
+    pass
+
+class B(E, D):
+    pass
+
+class A(B, C):
+    pass
+
+print D.__mro__  # python使用__mro__ 来存储线性化计算的结果。
+ubuntu@yee:/tmp$ python mro.py
+(<class '__main__.A'>, <class '__main__.B'>, <class '__main__.E'>, <class '__main__.C'>, <class '__main__.D'>,<class '__main__.F'>,<type 'object'>)
+
+\\\\\\\\\\\\\\\\
+可以看到顺序为：A-B-E-C-D-F
+----------------------------
+Ｃ３算法的原理:
+
+上面示例代码中所用到的正是Ｃ3算法，算法的表达式为：
+///////////////////////////////////////////
+
+L[D(B,C)]
+= D + merge(L[B],L[C],[B,C])
+
+以上表达式也等同于：
+==>
+Ｌ[D(B,C)] = D + merge(mro(B,object),mro(C,object),[B,C]) ==>     Ｌ[D(B,C)]  =  D + merge( [B,object], [C,
+object],[B,C])  [] : 列表表达式
+merge: Ｃ3算法的核心
+
+//////////////////////////////////////////
+
+《python高级编程》中是这样写的：
+
+    取第一个列表的头，也就是L[B,object]，如果这个头不在任何表的尾部，那么将它加到Ｃｌａｓｓ D的线性化中，并且从合并中的列表里删除；
+    否则查找下一个列表的头，如果是个好的表头则取出它。 
+    需要注意的是：表头指是第一个元素，尾部是指除表头之外的其它所有元素。如[A,B,C,D,E,F],A是表头，[B,C,D,E,F]是尾部。
+
+方式解析：
+
+L(D(B,C)) = D + merge( [B,object] ,[C,object] , [B,C] )
+
+#列表[B,object]的表头是Ｂ，没有出现在其它表([C,object] 、[B,C] )的尾部
+
+= [D, B] + merge( [object], [C,object] , [C] )
+
+#列表[Ｃ,object]的表头是Ｃ，没有出现在其它表([object] 、[C] )的尾部 ，注意 [C] 这个列表只有表头，没有尾部
+
+= [D, B,C] + merge( [object] , [object] )
+
+= [D, B,C,object]
+
+通过以上的运算，可以得出跟 D().__mro__ 一样的结果 。
+
+MRO算法
+http://python.jobbole.com/85685/
